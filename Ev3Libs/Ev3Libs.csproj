@@ -40,8 +40,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Ev3Brick.cs" />
+    <Compile Include="Ev3BlueToothManager.cs" />
     <Compile Include="Ev3Lib.cs" />
-    <Compile Include="Exceptions.cs" />
+    <Compile Include="Ev3Peripheral.cs" />
+    <Compile Include="Ev3Exceptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

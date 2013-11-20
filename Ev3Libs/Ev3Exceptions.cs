@@ -7,7 +7,11 @@ namespace Ev3Libs
 {
     class Ev3Exceptions
     {
-        class Ev3BTConnectionTimeout : System.Exception
+        public class ConnectionTimeout : System.Exception
+        {
+        }
+
+        public class ConnectionMissing : System.Exception
         {
         }
     }
