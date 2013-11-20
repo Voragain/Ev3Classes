@@ -15,7 +15,8 @@ namespace Ev3Libs
             BlueToothConnection = new SerialPort();
             BlueToothConnection.PortName = portName;
             BlueToothConnection.Open();
-            BlueToothConnection.ReadTimeout = 1500;
+            BlueToothConnection.ReadTimeout = 500;
+            BlueToothConnection.WriteTimeout = 500;
         }
 
         public void SendString(string data)
