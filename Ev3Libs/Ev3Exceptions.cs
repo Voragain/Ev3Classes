@@ -5,7 +5,10 @@ using System.Text;
 
 namespace Ev3Libs
 {
-    public class Ev3Lib
+    class Ev3Exceptions
     {
+        class Ev3BTConnectionTimeout : System.Exception
+        {
+        }
     }
 }
