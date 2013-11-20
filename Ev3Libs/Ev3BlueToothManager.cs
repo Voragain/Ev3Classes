@@ -32,6 +32,10 @@ namespace Ev3Libs
             {
                 throw new Ev3Exceptions.ConnectionMissing();
             }
+
+            
+
+            BlueToothConnection.Write(data);
         }
 
         public void SendInteger(int data)
