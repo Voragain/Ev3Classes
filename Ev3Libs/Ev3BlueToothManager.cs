@@ -14,23 +14,61 @@ namespace Ev3Libs
         public Ev3BlueToothManager()
         {
             bInit = false;
-        }
-
-        public Ev3BlueToothManager(string portName)
-        {
             BlueToothConnection = new SerialPort();
-            BlueToothConnection.PortName = portName;
-            BlueToothConnection.Open();
             BlueToothConnection.ReadTimeout = 500;
             BlueToothConnection.WriteTimeout = 500;
+        }
+
+        public void SetConnectionPort(string name)
+        {
+            if (BlueToothConnection.IsOpen)
+                throw new Ev3Exceptions.ConnectionError("Connection already open - close first");
+
+            if (name == "")
+            {
+                bInit = false;
+                return;
+            }
+
+            BlueToothConnection.PortName = name;
             bInit = true;
+        }
+
+        public void OpenConnection()
+        {
+            if (!bInit)
+                throw new Ev3Exceptions.ConnectionError("No port defined");
+            if (BlueToothConnection.IsOpen)
+                throw new Ev3Exceptions.ConnectionError("Connection already open - close first");
+            try
+            {
+                BlueToothConnection.Open();
+            }
+            catch (Exception e)
+            {
+                throw new Ev3Exceptions.ConnectionError("Connection error : " + e.Message);
+            }
+ 
+
+            if (!BlueToothConnection.IsOpen)
+            {
+                throw new Ev3Exceptions.ConnectionError("Connection failed, still closed");
+            }
+        }
+
+        public void CloseConnection()
+        {
+            if (!BlueToothConnection.IsOpen)
+                throw new Ev3Exceptions.ConnectionError("Connection is already closed");
+
+            BlueToothConnection.Close();
         }
 
         public void SendString(string data)
         {
             if (!bInit)
             {
-                throw new Ev3Exceptions.ConnectionMissing();
+                throw new Ev3Exceptions.ConnectionPortMissing();
             }
 
             
@@ -42,7 +80,7 @@ namespace Ev3Libs
         {
             if (!bInit)
             {
-                throw new Ev3Exceptions.ConnectionMissing();
+                throw new Ev3Exceptions.ConnectionPortMissing();
             }
         }
 
@@ -50,25 +88,33 @@ namespace Ev3Libs
         {
             if (!bInit)
             {
-                throw new Ev3Exceptions.ConnectionMissing();
+                throw new Ev3Exceptions.ConnectionPortMissing();
             }
+        }
+
+        public bool DataAvailable()
+        {
+            if (!BlueToothConnection.IsOpen)
+                throw new Ev3Exceptions.ConnectionError("Connection closed, cannot proceed");
+
+            return (BlueToothConnection.BytesToRead > 0);
         }
 
         public string ReceiveString()
         {
-            if (!bInit)
+            if (!BlueToothConnection.IsOpen)
             {
-                throw new Ev3Exceptions.ConnectionMissing();
+                throw new Ev3Exceptions.ConnectionError("Connection is closed, cannot proceed");
             }
 
-            return "";
+            return BlueToothConnection.ReadExisting();
         }
 
         public int ReceiveInt()
         {
-            if (!bInit)
+            if (!BlueToothConnection.IsOpen)
             {
-                throw new Ev3Exceptions.ConnectionMissing();
+                throw new Ev3Exceptions.ConnectionClosed();
             }
 
             return 0;
@@ -76,9 +122,9 @@ namespace Ev3Libs
 
         public bool ReceiveBool()
         {
-            if (!bInit)
+            if (!BlueToothConnection.IsOpen)
             {
-                throw new Ev3Exceptions.ConnectionMissing();
+                throw new Ev3Exceptions.ConnectionClosed();
             }
 
             return false;

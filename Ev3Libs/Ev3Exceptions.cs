@@ -5,13 +5,30 @@ using System.Text;
 
 namespace Ev3Libs
 {
-    class Ev3Exceptions
+    public class Ev3Exceptions
     {
-        public class ConnectionTimeout : System.Exception
+        public class ConnectionError : System.Exception
+        {
+            public ConnectionError(string msg) : base(msg) {}
+        }
+
+        public class ConnectionClosed : System.Exception
         {
         }
 
-        public class ConnectionMissing : System.Exception
+        public class ConnectionAlreadyOpen : System.Exception
+        {
+        }
+
+        public class ConnectionOpenFailed : System.Exception
+        {
+        }
+
+        public class ConnectionTimeout : System.Exception
+        {
+        }
+        
+        public class ConnectionPortMissing : System.Exception
         {
         }
     }
