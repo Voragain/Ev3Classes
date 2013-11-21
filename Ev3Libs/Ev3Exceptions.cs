@@ -12,6 +12,11 @@ namespace Ev3Libs
             public ConnectionError(string msg) : base(msg) {}
         }
 
+        public class TransmissionError : System.Exception
+        {
+            public TransmissionError(string msg) : base(msg) {}
+        }
+
         public class ConnectionClosed : System.Exception
         {
         }

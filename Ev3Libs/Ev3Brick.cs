@@ -60,5 +60,10 @@ namespace Ev3Libs
         {
             return BlueToothManager.ReceiveString();
         }
+
+        public void SendStringData(string s)
+        {
+            BlueToothManager.SendString(s);
+        }
     }
 }

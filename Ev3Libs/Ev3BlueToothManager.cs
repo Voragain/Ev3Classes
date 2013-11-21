@@ -68,12 +68,22 @@ namespace Ev3Libs
         {
             if (!bInit)
             {
-                throw new Ev3Exceptions.ConnectionPortMissing();
+                throw new Ev3Exceptions.ConnectionError("Connection is closed, cannot proceed");
             }
 
-            
+            byte[] msgsize = new byte[2];
+            msgsize[0] = 0;
+            msgsize[1] = (byte)data.Length;
+            try
+            {
+                BlueToothConnection.Write(msgsize, 0, 2);
 
-            BlueToothConnection.Write(data);
+                BlueToothConnection.Write(data.ToCharArray(), 0, data.Length);
+            }
+            catch (Exception e)
+            {
+                throw new Ev3Exceptions.TransmissionError("Transmission of \"" + data + "\" failed");
+            }
         }
 
         public void SendInteger(int data)
