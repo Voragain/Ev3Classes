@@ -127,7 +127,7 @@ namespace Ev3Libs
 
             List<byte> message = new List<byte>();
 
-            int totalLen = raw.Body.Count + 6;
+            int totalLen = raw.Body.Count + 4;
             message.Add((byte)(totalLen & 255));
             message.Add((byte)(totalLen >> 8));
             message.Add((byte)(raw.MsgClass & 255));

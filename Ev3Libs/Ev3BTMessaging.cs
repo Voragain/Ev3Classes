@@ -76,7 +76,7 @@ namespace Ev3Libs
             raw.byte2 = 0x9e;
             raw.Body = new List<byte>();
 
-            int titleLen = msgTitle.Length;
+            int titleLen = msgTitle.Length + 1;
             raw.Body.Add((byte)(titleLen));
             foreach (char c in msgTitle.ToCharArray())
             {
@@ -84,7 +84,7 @@ namespace Ev3Libs
             }
             raw.Body.Add(0);
 
-            int msgLen = msg.Length;
+            int msgLen = msg.Length + 1;
             raw.Body.Add((byte)(msgLen & 255));
             raw.Body.Add((byte)(msgLen >> 8));
             foreach (char c in msg.ToCharArray())
@@ -104,7 +104,7 @@ namespace Ev3Libs
             raw.byte2 = 0x9e;
             raw.Body = new List<byte>();
 
-            int titleLen = msgTitle.Length;
+            int titleLen = msgTitle.Length + 1;
             raw.Body.Add((byte)(titleLen));
             foreach (char c in msgTitle.ToCharArray())
             {
@@ -131,7 +131,7 @@ namespace Ev3Libs
             raw.byte2 = 0x9e;
             raw.Body = new List<byte>();
 
-            int titleLen = msgTitle.Length;
+            int titleLen = msgTitle.Length + 1;
             raw.Body.Add((byte)(titleLen));
             foreach (char c in msgTitle.ToCharArray())
             {
@@ -145,6 +145,13 @@ namespace Ev3Libs
             raw.Body.Add((byte)(msg?1:0));
 
             BTManager.SendMessage(raw);
+        }
+
+        public int CountMessages(string title)
+        {
+            if (MessageBoxes.ContainsKey(title))
+                return MessageBoxes[title].Count;
+            return 0;
         }
 
         public Message ReadFirstMsgFromBox(string title)
