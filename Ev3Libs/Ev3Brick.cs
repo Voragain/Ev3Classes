@@ -7,6 +7,7 @@ namespace Ev3Libs
 {
     public class Ev3Brick
     {
+        public Ev3BTMessaging Messaging;
         Ev3BlueToothManager BlueToothManager;
         List<Ev3Peripheral> Peripherals;
 
@@ -61,9 +62,24 @@ namespace Ev3Libs
             return BlueToothManager.ReceiveString();
         }
 
-        public void SendStringData(string s)
+        public int GetByte()
         {
-            BlueToothManager.SendString(s);
+            return BlueToothManager.ReceiveByte();
+        }
+
+        public void SendStringData(string t, string m)
+        {
+            BlueToothManager.SendString(t, m);
+        }
+
+        public void SendNumber(string t, float v)
+        {
+            BlueToothManager.SendNumber(t, v);
+        }
+
+        public void SendBool(string t, bool v)
+        {
+            BlueToothManager.SendBoolean(t, v);
         }
     }
 }
