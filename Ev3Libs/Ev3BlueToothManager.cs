@@ -8,6 +8,18 @@ namespace Ev3Libs
 {
     class Ev3BlueToothManager
     {
+        public delegate bool BlueToothMessageHandler(Ev3BlueToothManager.RawMessage raw);
+
+        public class RawMessage
+        {
+            public int MsgClass;
+            public byte byte1;
+            public byte byte2;
+            public List<byte> Body;
+        }
+
+        Dictionary<int, BlueToothMessageHandler> MessageHandlers;
+
         SerialPort BlueToothConnection;
 
         List<byte> InBuffer = new List<byte>();
@@ -21,6 +33,13 @@ namespace Ev3Libs
             BlueToothConnection.ReadTimeout = 500;
             BlueToothConnection.WriteTimeout = 500;
             BlueToothConnection.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+
+            MessageHandlers = new Dictionary<int,BlueToothMessageHandler>();
+        }
+
+        public void AddHandler(int msgclass, BlueToothMessageHandler handler)
+        {
+            MessageHandlers.Add(msgclass, handler);
         }
 
         private void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
@@ -32,6 +51,26 @@ namespace Ev3Libs
             {
                 InBuffer.Add((byte)c);
             }
+        }
+
+        private void ParseMessages()
+        {
+            do
+            {
+                int msgSize = (InBuffer[0] + (InBuffer[1] << 8));
+                if (InBuffer.Count < (msgSize + 2))
+                    return;
+
+                RawMessage raw = new RawMessage();
+                raw.MsgClass = InBuffer[2] + (InBuffer[3] << 8);
+                raw.byte1 = InBuffer[4];
+                raw.byte2 = InBuffer[5];
+                raw.Body = InBuffer.GetRange(6, msgSize - 4);
+                if (MessageHandlers.ContainsKey(raw.MsgClass))
+                    MessageHandlers[raw.MsgClass].Invoke(raw);
+
+                InBuffer.RemoveRange(0, msgSize + 2);
+            } while (InBuffer.Count > 0);           
         }
 
         public void SetConnectionPort(string name)
@@ -79,206 +118,29 @@ namespace Ev3Libs
             BlueToothConnection.Close();
         }
 
-        public void SendString(string title, string msg)
+        public void SendMessage(RawMessage raw)
         {
             if (!bInit)
             {
                 throw new Ev3Exceptions.ConnectionError("Connection is closed, cannot proceed");
             }
 
-            //title = title + (char)0;
-            //msg = msg + (char)0;
+            List<byte> message = new List<byte>();
 
-            List<byte> buffer = new List<byte>();
-            buffer.Add(0);
-            buffer.Add(0);
-            buffer.Add(1);
-            buffer.Add(0);
-            buffer.Add(0x81);
-            buffer.Add(0x9e);
-            buffer.Add((byte)(title.Length + 1));
-            foreach (char c in title.ToCharArray())
+            int totalLen = raw.Body.Count + 6;
+            message.Add((byte)(totalLen & 255));
+            message.Add((byte)(totalLen >> 8));
+            message.Add((byte)(raw.MsgClass & 255));
+            message.Add((byte)(raw.MsgClass >> 8));
+            message.Add(raw.byte1);
+            message.Add(raw.byte2);
+            foreach (byte b in raw.Body.ToArray())
             {
-                buffer.Add((byte)c);
-            }
-            buffer.Add(0);
-
-            buffer.Add((byte)(msg.Length + 1));
-            buffer.Add(0);
-
-            foreach (char c in msg.ToCharArray())
-            {
-                buffer.Add((byte)c);
-            }
-            buffer.Add(0);
-
-            buffer[0] = (byte)(buffer.Count - 2);
-
-            try
-            {
-                BlueToothConnection.Write(buffer.ToArray(), 0, buffer.Count);
-            }
-            catch (Exception e)
-            {
-                throw new Ev3Exceptions.TransmissionError("Transmission of \"" + title + "@" + msg + "\" failed");
-            }
-        }
-
-        public void SendNumber(string title, float data)
-        {
-            if (!bInit)
-            {
-                throw new Ev3Exceptions.ConnectionError("Connection is closed, cannot proceed");
+                message.Add(b);
             }
 
-            //title = title + (char)0;
-            //msg = msg + (char)0;
 
-            List<byte> buffer = new List<byte>();
-            buffer.Add(0);
-            buffer.Add(0);
-            buffer.Add(1);
-            buffer.Add(0);
-            buffer.Add(0x81);
-            buffer.Add(0x9e);
-            buffer.Add((byte)(title.Length + 1));
-            foreach (char c in title.ToCharArray())
-            {
-                buffer.Add((byte)c);
-            }
-            buffer.Add(0);
-
-            buffer.Add(4);
-            buffer.Add(0);
-
-
-            foreach (byte b in BitConverter.GetBytes(data))
-            {
-                buffer.Add(b);
-            }
-
-            buffer[0] = (byte)(buffer.Count - 2);
-
-            try
-            {
-                BlueToothConnection.Write(buffer.ToArray(), 0, buffer.Count);
-            }
-            catch (Exception e)
-            {
-                throw new Ev3Exceptions.TransmissionError("Transmission of \"" + title + "@" + data.ToString() + "\" failed");
-            }
-        }
-
-        public void SendBoolean(string title, bool data)
-        {
-            if (!bInit)
-            {
-                throw new Ev3Exceptions.ConnectionError("Connection is closed, cannot proceed");
-            }
-
-            //title = title + (char)0;
-            //msg = msg + (char)0;
-
-            List<byte> buffer = new List<byte>();
-            buffer.Add(0);
-            buffer.Add(0);
-            buffer.Add(1);
-            buffer.Add(0);
-            buffer.Add(0x81);
-            buffer.Add(0x9e);
-            buffer.Add((byte)(title.Length + 1));
-            foreach (char c in title.ToCharArray())
-            {
-                buffer.Add((byte)c);
-            }
-            buffer.Add(0);
-
-            buffer.Add(1);
-            buffer.Add(0);
-            if (data)
-                buffer.Add(1);
-            else
-                buffer.Add(0);
-
-            buffer[0] = (byte)(buffer.Count - 2);
-
-            try
-            {
-                BlueToothConnection.Write(buffer.ToArray(), 0, buffer.Count);
-            }
-            catch (Exception e)
-            {
-                throw new Ev3Exceptions.TransmissionError("Transmission of \"" + title + "@" + data.ToString() + "\" failed");
-            }
-        }
-
-        public bool DataAvailable()
-        {
-            if (!BlueToothConnection.IsOpen)
-                throw new Ev3Exceptions.ConnectionError("Connection closed, cannot proceed");
-
-            return (BlueToothConnection.BytesToRead > 0);
-        }
-
-        public string ReceiveString()
-        {
-            if (!BlueToothConnection.IsOpen)
-            {
-                throw new Ev3Exceptions.ConnectionError("Connection is closed, cannot proceed");
-            }
-
-            return BlueToothConnection.ReadExisting();
-        }
-
-        public int ReceiveInt()
-        {
-            if (!BlueToothConnection.IsOpen)
-            {
-                throw new Ev3Exceptions.ConnectionClosed();
-            }
-
-            return 0;
-        }
-
-        public bool ReceiveBool()
-        {
-            if (!BlueToothConnection.IsOpen)
-            {
-                throw new Ev3Exceptions.ConnectionClosed();
-            }
-
-            return false;
-        }
-
-        public int ReceiveByte()
-        {
-            if (!BlueToothConnection.IsOpen)
-            {
-                throw new Ev3Exceptions.ConnectionError("Connection is closed, cannot proceed");
-            }
-
-            return BlueToothConnection.ReadByte();
-        }
-
-        public Ev3BTMessaging.MessageType PeekMessageType()
-        {
-            if (InBuffer.Count == 0)
-                return Ev3BTMessaging.MessageType.MessageNone;
-
-            int NextMsgSize = (InBuffer[0] + (InBuffer[1] << 8));
-            if (InBuffer.Count < (NextMsgSize + 2))
-                return Ev3BTMessaging.MessageType.MessageNone;
-
-            int msgSize = (InBuffer[InBuffer[6] + 7] + (InBuffer[InBuffer[6] + 8] >> 8));
-
-            if (msgSize == 1)
-                return Ev3BTMessaging.MessageType.MessageBool;
-
-            if (msgSize == 4)
-                if ((InBuffer[InBuffer[6] + 12] != 0) || (InBuffer[InBuffer[6] + 9] == 0))
-                    return Ev3BTMessaging.MessageType.MessageNumber;
-
-            return Ev3BTMessaging.MessageType.MessageText;
+            BlueToothConnection.Write(message.ToArray(), 0, message.Count);
 
         }
     }
