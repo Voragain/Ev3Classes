@@ -10,7 +10,7 @@ namespace Ev3Libs
     {
         SerialPort BlueToothConnection;
 
-        List<byte> InBuffer;
+        List<byte> InBuffer = new List<byte>();
 
         bool bInit;
 
